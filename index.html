@@ -1,16 +1,701 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>คูปองอาหาร</title>
+<!doctype html>
+<html lang="th">
+ <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="shortcut icon" href="https://lh5.googleusercontent.com/d/1i6kR2cG42pzNT-m7dSGFeksarCuoEJSo">
-</head>
-<body style="margin: 0; padding: 0; overflow: hidden;">
-  <iframe 
-    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
-    allow="camera; nfc; clipboard-read; clipboard-write" 
-    src="https://script.google.com/macros/s/AKfycbwirJB9ehY_U7XJMPhkFq5jzTRVBsJP9cyG0gY53BMNH3Ds4pgQp_4YJj7HQ8K_8tSpHQ/exec">
-  </iframe>
-</body>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบคูปองอาหาร</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Kanit', sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%); min-height: 100vh; }
+    
+    .navbar { background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); padding: 1rem; box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3); position: sticky; top: 0; z-index: 1000; }
+    .navbar-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    .navbar-brand { display: flex; align-items: center; gap: 0.75rem; color: white; font-size: 1.5rem; font-weight: 600; }
+    .navbar-menu { display: flex; gap: 0.5rem; flex-wrap: nowrap; }
+    .nav-btn { background: rgba(255, 255, 255, 0.2); color: white; border: 2px solid rgba(255, 255, 255, 0.3); padding: 0.5rem 1rem; border-radius: 50px; cursor: pointer; font-family: 'Kanit', sans-serif; font-size: 0.9rem; font-weight: 500; transition: all 0.3s ease; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; }
+    .nav-btn:hover, .nav-btn.active { background: white; color: #FF6B35; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    
+    .main-container { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; }
+    .page { display: none; }
+    .page.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .scan-card { background: white; border-radius: 30px; padding: 1.5rem 2rem; box-shadow: 0 20px 60px rgba(255, 107, 53, 0.15); max-width: 450px; width: 100%; margin: 0 auto; text-align: center; }
+    .scan-title { font-size: 1.4rem; font-weight: 600; color: #333; margin: 0 0 0.8rem 0; }
+    
+    .store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.5rem; }
+    .store-btn { background: #f5f7fa; border: 2px solid #e0e0e0; padding: 0.8rem 1rem; border-radius: 12px; font-family: 'Kanit'; font-size: 1.1rem; font-weight: 600; color: #555; cursor: pointer; transition: all 0.3s ease; }
+    .store-btn:hover { border-color: #FF6B35; color: #FF6B35; background: #fff5f0; }
+    .store-btn.active { background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); color: white; border-color: transparent; box-shadow: 0 10px 20px rgba(255, 107, 53, 0.3); }
+
+    #actionSection { display: none; opacity: 0; transition: opacity 0.5s ease; }
+    #actionSection.active { display: block; opacity: 1; }
+
+    .scan-buttons { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem; align-items: center; margin-top:0.5rem;}
+    .action-btn { background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); color: white; border: none; padding: 0.8rem 2rem; border-radius: 50px; font-family: 'Kanit'; font-size: 1.1rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.75rem; width: 100%; box-shadow: 0 10px 20px rgba(33, 150, 243, 0.3); }
+    .action-btn.barcode { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3); }
+    
+    .demo-input-group { display: flex; gap: 0.5rem; flex-wrap: nowrap; align-items: stretch;}
+    .demo-input { flex: 1; min-width: 0; padding: 0.8rem; border: 2px solid #e0e0e0; border-radius: 12px; font-family: 'Kanit'; font-size: 1.1rem; text-align: center; }
+    .demo-btn { background: #FF6B35; color: white; border: none; padding: 0.8rem 1.2rem; border-radius: 12px; font-family: 'Kanit'; font-size: 1rem; cursor: pointer; white-space: nowrap; }
+    
+    .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .summary-card { background: white; border-radius: 15px; padding: 1rem; box-shadow: 0 5px 15px rgba(0,0,0,0.05); position: relative; overflow: hidden; display:flex; flex-direction:column; align-items:center; text-align:center;}
+    .summary-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: #FF6B35; }
+    .summary-card-value { font-size: 1.5rem; font-weight: 700; color: #333; margin-top:0.5rem;}
+    .summary-card-title { font-size: 0.85rem; color: #888; }
+    
+    .filter-section { background: white; border-radius: 15px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; align-items: end; }
+    .filter-group { display: flex; flex-direction: column; gap: 0.3rem; }
+    .filter-input, .filter-select { padding: 0.6rem; border: 1px solid #ddd; border-radius: 8px; font-family: 'Kanit'; width: 100%; }
+    
+    .table-section { background: white; border-radius: 15px; padding: 1rem; box-shadow: 0 5px 15px rgba(0,0,0,0.05); overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: collapse; min-width: 800px; font-size: 0.9rem; }
+    .data-table th { background: #f8f9fa; color: #333; padding: 0.8rem; text-align: left; border-bottom: 2px solid #ddd;}
+    .data-table td { padding: 0.8rem; border-bottom: 1px solid #f0f0f0; }
+    
+    .admin-nav { display:flex; gap:0.5rem; margin-bottom:1.5rem; overflow-x:auto; padding-bottom:0.5rem;}
+    .admin-tab { padding:0.6rem 1.2rem; background:#eee; border-radius:20px; cursor:pointer; font-weight:500; white-space:nowrap; transition:0.3s;}
+    .admin-tab.active { background:#FF6B35; color:white; }
+
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; margin-bottom:1.5rem;}
+    .admin-table th { background: #f0f0f0; padding: 0.8rem; text-align: center; border-bottom:2px solid #ddd; font-weight:600;}
+    .admin-table td { padding: 0.8rem; text-align: center; border-bottom: 1px solid #e0e0e0; vertical-align: middle; }
+    .admin-table td:first-child { border-right: 1px solid #eee; text-align: left; padding-left: 1rem; }
+    .admin-table td:nth-child(2) { text-align: left; padding-left: 1rem; }
+    
+    .btn-sm { padding:0.4rem 0.8rem; border-radius:6px; font-family:'Kanit'; font-size:0.8rem; border:none; cursor:pointer; color:white;}
+    .btn-edit { background:#FF9800; } .btn-delete { background:#F44336; } .btn-add { background:#4CAF50; margin-bottom:1rem; font-size:1rem; padding:0.6rem 1.2rem;}
+    
+    .switch { position: relative; display: inline-block; width: 50px; height: 26px; flex-shrink:0;}
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
+    input:checked + .slider { background-color: #4CAF50; }
+    input:checked + .slider:before { transform: translateX(24px); }
+
+    .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); display: none; justify-content: center; align-items: center; z-index: 9999; }
+    .loading-overlay.active { display: flex; }
+    .spinner { width: 50px; height: 50px; border: 4px solid #f0f0f0; border-top-color: #FF6B35; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 9998; padding: 1rem; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: white; border-radius: 20px; width: 100%; max-width: 400px; overflow: hidden; animation: fadeIn 0.3s ease; display:flex; flex-direction:column; max-height:90vh;}
+    .modal-header { background: #FF6B35; color: white; padding: 1rem 1.5rem; font-size:1.2rem; font-weight:600;}
+    .modal-body { padding: 1.5rem; overflow-y:auto;}
+    .modal-footer { padding: 1rem 1.5rem; text-align:right; border-top:1px solid #eee; background:#fafafa;}
+    
+    .form-group { margin-bottom: 1rem; text-align:left;}
+    .form-group label { display:block; margin-bottom:0.3rem; font-size:0.9rem; color:#555;}
+    .form-control { width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:8px; font-family:'Kanit';}
+    
+    #reader { width: 100%; min-height: 250px; background: #000; border-radius: 10px; overflow: hidden; margin-bottom: 1rem; display:flex; align-items:center; justify-content:center;}
+    #reader video { object-fit: cover; width: 100%; height: 100%; }
+
+    @media (max-width: 768px) {
+      .navbar-menu { justify-content: space-between; width: 100%; margin-top: 0.5rem; }
+      .nav-btn { flex: 1; justify-content: center; padding: 0.5rem 0; font-size:0.85rem;}
+      .summary-cards { grid-template-columns: 1fr 1fr; }
+      .summary-card.total { grid-column: span 2; }
+      .action-buttons { flex-direction: column; }
+      .action-buttons button { width: 100%; }
+    }
+  </style>
+ </head>
+ <body>
+  
+  <div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"><div class="spinner"></div></div></div>
+
+  <div class="modal-overlay" id="barcodeModal">
+   <div class="modal">
+    <div class="modal-header" style="background:#2E7D32;"><i class="fas fa-camera"></i> สแกนบาร์โค้ดพนักงาน</div>
+    <div class="modal-body" style="padding:1rem; text-align:center;">
+       <div id="reader">กำลังขอกล้อง...</div>
+    </div>
+    <div class="modal-footer"><button class="btn-sm" style="background:#666; padding:0.6rem 1.2rem;" onclick="closeBarcodeModal()">ปิดกล้อง</button></div>
+   </div>
+  </div>
+
+  <div class="modal-overlay" id="empModal">
+   <div class="modal">
+    <div class="modal-header" id="empModalTitle">เพิ่มพนักงาน</div>
+    <div class="modal-body">
+      <input type="hidden" id="empRow">
+      <div class="form-group"><label>เลขทะเบียน (เช่น 12345-6)</label><input type="text" id="empId" class="form-control" oninput="formatEmployeeId(this)" maxlength="7"></div>
+      <div class="form-group"><label>ชื่อ-สกุล</label><input type="text" id="empName" class="form-control"></div>
+      <div class="form-group"><label>Cost</label><input type="text" id="empCost" class="form-control"></div>
+      <div class="form-group"><label>โรงงาน</label><input type="text" id="empFactory" class="form-control"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm" style="background:#ccc; color:#333; margin-right:0.5rem;" onclick="closeModal('empModal')">ยกเลิก</button>
+      <button class="btn-sm btn-add" style="margin:0;" onclick="saveEmpData()">บันทึก</button>
+    </div>
+   </div>
+  </div>
+
+  <div class="modal-overlay" id="storeModal">
+   <div class="modal">
+    <div class="modal-header" id="storeModalTitle">เพิ่มร้านค้า</div>
+    <div class="modal-body">
+      <input type="hidden" id="storeRow">
+      <div class="form-group"><label>รหัสร้านค้า</label><input type="text" id="storeId" class="form-control"></div>
+      <div class="form-group"><label>ชื่อร้านค้า</label><input type="text" id="storeName" class="form-control"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm" style="background:#ccc; color:#333; margin-right:0.5rem;" onclick="closeModal('storeModal')">ยกเลิก</button>
+      <button class="btn-sm btn-add" style="margin:0;" onclick="saveStoreData()">บันทึก</button>
+    </div>
+   </div>
+  </div>
+
+  <div class="modal-overlay" id="successModal">
+   <div class="modal">
+    <div class="modal-header"><h3 style="font-size: 1.4rem; margin:0;"><i class="fas fa-check-circle"></i> ใช้สิทธิ์สำเร็จ!</h3></div>
+    <div class="modal-body">
+     <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;"><span><i class="fas fa-id-card"></i> ทะเบียน</span> <strong id="modalNfcId">-</strong></div>
+     <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;"><span><i class="fas fa-user"></i> ชื่อ</span> <strong id="modalName">-</strong></div>
+     <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;"><span><i class="fas fa-industry"></i> โรงงาน</span> <strong id="modalFactory">-</strong></div>
+     <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;"><span><i class="fas fa-calendar"></i> เวลา</span> <strong id="modalDateTime">-</strong></div>
+     <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; color:#FF6B35; font-size:1.2rem;"><span><i class="fas fa-coins"></i> มูลค่า</span> <strong id="modalValue">-</strong></div>
+    </div>
+    <div class="modal-footer"><button class="btn-sm btn-add" style="margin:0; width:100%;" onclick="closeModal('successModal')">ตกลง</button></div>
+   </div>
+  </div>
+
+  <nav class="navbar">
+   <div class="navbar-container">
+    <div class="navbar-brand"><i class="fas fa-utensils"></i> <span>ระบบคูปองอาหาร</span></div>
+    <div class="navbar-menu">
+      <button class="nav-btn active" onclick="showPage('home')"> <i class="fas fa-home"></i> <span>หน้าแรก</span> </button> 
+      <button class="nav-btn" onclick="showPage('report')"> <i class="fas fa-chart-bar"></i> <span>รายงาน</span> </button> 
+      <button class="nav-btn" onclick="showPage('admin')"> <i class="fas fa-user-shield"></i> <span>ผู้ดูแล</span> </button>
+    </div>
+   </div>
+  </nav>
+
+  <div class="main-container">
+   <div id="homePage" class="page active">
+     <div class="scan-card">
+      <h2 class="scan-title">1. เลือกร้านค้า</h2>
+      <div class="store-grid" id="homeStoreList"></div>
+      
+      <div id="actionSection">
+        <hr style="border:1px dashed #ddd; margin: 0.5rem 0 1rem 0;">
+        <h2 class="scan-title">2. ยืนยันสิทธิ์</h2>
+        
+        <div class="scan-buttons">
+          <button class="action-btn" onclick="startNFCScan()"><i class="fas fa-wifi"></i> แตะบัตร NFC</button> 
+          <button class="action-btn barcode" onclick="startBarcodeScan()"><i class="fas fa-camera"></i> สแกนด้วยกล้อง</button> 
+        </div>
+        
+        <div class="demo-section" style="margin-top: 1rem; padding-top: 1rem;">
+          <label class="demo-label">หรือพิมพ์เลขทะเบียนพนักงาน</label>
+          <div class="demo-input-group">
+            <datalist id="employeeList"></datalist>
+            <input type="text" class="demo-input" id="demoNfcInput" placeholder="12345-6" maxlength="7" oninput="formatEmployeeId(this)" list="employeeList"> 
+            <button class="demo-btn" onclick="demoProcess()"><i class="fas fa-check"></i> บันทึก</button>
+          </div>
+        </div>
+      </div>
+     </div>
+   </div>
+
+   <div id="reportPage" class="page">
+    <div class="summary-cards" id="reportSummaryCards"></div>
+
+    <div class="filter-section">
+     <h3 class="filter-title"><i class="fas fa-filter"></i> ตัวกรองข้อมูล</h3>
+     <div class="filter-grid">
+      <div class="filter-group"><label class="filter-label">วันที่เริ่ม</label> <input type="date" class="filter-input" id="filterStartDate"></div>
+      <div class="filter-group"><label class="filter-label">วันที่สิ้นสุด</label> <input type="date" class="filter-input" id="filterEndDate"></div>
+      <div class="filter-group"><label class="filter-label">โรงงาน</label> <select class="filter-select" id="filterFactory"><option value="all">ทั้งหมด</option></select></div>
+      <div class="filter-group" style="display: flex; gap: 0.5rem; flex-direction: row; align-items: flex-end;">
+         <button class="filter-btn primary" onclick="applyFilter()">ค้นหา</button> 
+         <button class="filter-btn secondary" onclick="resetFilter()">รีเซ็ต</button>
+      </div>
+     </div>
+    </div>
+
+    <div class="table-section">
+     <div style="overflow-x:auto;">
+      <table class="data-table">
+       <thead><tr><th>#</th><th>เลขทะเบียน</th><th>ชื่อ-สกุล</th><th>Cost</th><th>โรงงาน</th><th>ร้านค้า</th><th>วันที่/เวลา</th></tr></thead>
+       <tbody id="dataTableBody"><tr><td colspan="7" style="text-align:center; padding: 2rem;">กำลังโหลดข้อมูล...</td></tr></tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+
+   <div id="adminPage" class="page">
+    <div class="scan-card" id="adminLogin" style="max-width:400px;">
+      <i class="fas fa-lock" style="font-size:3rem; color:#FF6B35; margin-bottom:1rem;"></i>
+      <h2 class="scan-title">ผู้ดูแลระบบ</h2>
+      <input type="password" class="demo-input" id="adminPassword" placeholder="รหัสผ่าน" style="width:100%; margin-bottom:1rem; text-align:center; letter-spacing:3px;">
+      <button class="action-btn" onclick="adminLogin()">เข้าสู่ระบบ</button>
+    </div>
+
+    <div id="adminWorkspace" style="display:none; background:white; border-radius:20px; padding:1.5rem; box-shadow:0 10px 30px rgba(0,0,0,0.05);">
+      
+      <div class="admin-nav">
+        <div class="admin-tab active" onclick="switchAdminTab('tabSummary', this); reloadAdminSummary();"><i class="fas fa-chart-pie"></i> สรุปข้อมูล</div>
+        <div class="admin-tab" onclick="switchAdminTab('tabEmp', this); loadEmpData();"><i class="fas fa-users"></i> จัดการพนักงาน</div>
+        <div class="admin-tab" onclick="switchAdminTab('tabStore', this); loadStoreData();"><i class="fas fa-store"></i> จัดการร้านค้า</div>
+      </div>
+
+      <div id="tabSummary" class="admin-tab-content">
+        <div class="filter-section" style="box-shadow:none; border:1px solid #eee;">
+           <div class="filter-grid" style="grid-template-columns: 1fr 1fr;">
+             <div class="filter-group"><label class="filter-label">ปี</label><select id="adminFilterYear" class="filter-select" onchange="updateAdminWeekDropdown()"></select></div>
+             <div class="filter-group"><label class="filter-label">สัปดาห์</label><select id="adminFilterWeek" class="filter-select" onchange="applyAdminWeekFilter()"></select></div>
+           </div>
+           <div style="font-size: 0.85rem; color: #666; margin-top:0.5rem; text-align:center;" id="adminDateRangeDisplay"></div>
+           <input type="hidden" id="adminStartDateHidden"><input type="hidden" id="adminEndDateHidden">
+        </div>
+
+        <div id="exportTableContainer" style="overflow-x:auto;">
+          <table class="admin-table" id="exportTable">
+           <thead id="adminThead"></thead>
+           <tbody id="tbodyAdminCombined"></tbody>
+           <tfoot id="adminTfoot"></tfoot>
+          </table>
+        </div>
+
+        <div class="action-buttons" style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:1.5rem;">
+          <button class="btn-sm" style="flex:1; background:#E3F2FD; color:#1976D2; padding:0.8rem; font-size:1rem;" onclick="window.print()"><i class="fas fa-print"></i> พิมพ์ตารางนี้</button>
+          <button class="btn-sm" style="flex:1; background:#E8F5E9; color:#2E7D32; padding:0.8rem; font-size:1rem;" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> ส่งออก Excel</button>
+        </div>
+      </div>
+
+      <div id="tabEmp" class="admin-tab-content" style="display:none;">
+        <button class="btn-sm btn-add" onclick="openEmpModal()"><i class="fas fa-plus"></i> เพิ่มพนักงาน</button>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead><tr><th>ทะเบียน</th><th>ชื่อ</th><th>Cost</th><th>โรงงาน</th><th>จัดการ</th></tr></thead>
+            <tbody id="tbodyEmp"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tabStore" class="admin-tab-content" style="display:none;">
+        <button class="btn-sm btn-add" onclick="openStoreModal()"><i class="fas fa-plus"></i> เพิ่มร้านค้า</button>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead><tr><th>รหัสร้าน</th><th>ชื่อร้านค้า</th><th>จัดการ</th></tr></thead>
+            <tbody id="tbodyStore"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px dashed #ddd; display:flex; justify-content:center; align-items:center; flex-direction:column; gap:1.5rem;">
+        <div style="display:inline-flex; align-items:center; gap:1rem; background:#f9f9f9; padding:0.8rem 1.5rem; border-radius:50px;">
+           <span style="font-size:1rem; font-weight:500; color:#333;"><i class="fab fa-telegram" style="color:#0088cc; font-size:1.2rem;"></i> แจ้งเตือนผ่าน Telegram</span>
+           <label class="switch">
+             <input type="checkbox" id="telegramToggle" onchange="toggleTelegram(this.checked)">
+             <span class="slider"></span>
+           </label>
+        </div>
+        <button class="btn-sm" style="background:#ffebee; color:#d32f2f; padding:0.6rem 1.5rem;" onclick="adminLogout()"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</button>
+      </div>
+
+    </div>
+   </div>
+  </div>
+
+  <script>
+    // ================= กำหนดตัวแปรสำหรับ API =================
+    // ⚠️ นำ URL ของ Web App จาก Google Apps Script (ที่ลงท้ายด้วย /exec) มาวางที่นี่
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwirJB9ehY_U7XJMPhkFq5jzTRVBsJP9cyG0gY53BMNH3Ds4pgQp_4YJj7HQ8K_8tSpHQ/exec'; 
+
+    let currentPage = 'home';
+    let currentAdminAuth = '';
+    let selectedStore = '';
+    let html5QrcodeScanner = null;
+    let isCameraScanning = false;
+    let nfcAbortController = null;
+    let factoryList = ['RMK', 'CGL#3', 'AWP', 'CENTER']; 
+
+    // ================= ฟังก์ชันเชื่อมต่อกับ Google Apps Script API =================
+    async function callAPI(action, params = {}) {
+      const payload = { action: action, ...params };
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        if (!response.ok) throw new Error('Network response was not ok');
+        return await response.json();
+      } catch (error) {
+        console.error('API Error:', error);
+        throw new Error('ไม่สามารถเชื่อมต่อฐานข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
+      }
+    }
+    
+    // ================= เริ่มต้นระบบ =================
+    document.addEventListener("DOMContentLoaded", () => {
+      showLoading();
+      callAPI('getInitialData').then(res => {
+        const datalist = document.getElementById('employeeList');
+        res.empIds.forEach(id => { const option = document.createElement('option'); option.value = id; datalist.appendChild(option); });
+        
+        const storeGrid = document.getElementById('homeStoreList');
+        storeGrid.innerHTML = '';
+        res.stores.forEach(st => {
+          const btn = document.createElement('button');
+          btn.className = 'store-btn';
+          btn.innerText = st.name;
+          btn.onclick = () => selectStore(st.name, btn);
+          storeGrid.appendChild(btn);
+        });
+        hideLoading();
+      }).catch(err => { hideLoading(); Swal.fire('Error', err.message, 'error'); });
+
+      const thisWeek = getThisWeekRange();
+      document.getElementById('filterStartDate').value = thisWeek.start;
+      document.getElementById('filterEndDate').value = thisWeek.end;
+
+      const yearSelect = document.getElementById('adminFilterYear');
+      const currentYear = new Date().getFullYear();
+      for(let y = currentYear - 1; y <= currentYear + 2; y++) {
+        let opt = document.createElement('option'); opt.value = y; opt.text = "ปี " + (y + 543);
+        if(y === currentYear) opt.selected = true;
+        yearSelect.appendChild(opt);
+      }
+      window.isFirstLoad = true; updateAdminWeekDropdown(); window.isFirstLoad = false;
+    });
+
+    // ================= ฟังก์ชันทั่วไป =================
+    function showLoading() { document.getElementById('loadingOverlay').classList.add('active'); }
+    function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+    
+    function showPage(page) {
+      currentPage = page;
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      if (event && event.target) { let btn = event.target.closest('.nav-btn'); if (btn) btn.classList.add('active'); }
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(page + 'Page').classList.add('active');
+      
+      if (page === 'report') loadReportData();
+      else if (page === 'admin' && currentAdminAuth !== '') {
+        if (document.getElementById('tabEmp').style.display === 'block') loadEmpData();
+        else if (document.getElementById('tabStore').style.display === 'block') loadStoreData();
+        else reloadAdminSummary();
+      }
+    }
+    
+    function formatEmployeeId(input) {
+      let val = input.value.replace(/\D/g, ''); 
+      if (val.length > 5) val = val.substring(0, 5) + '-' + val.substring(5, 6);
+      input.value = val;
+    }
+    function formatNumber(num) { return num.toLocaleString('th-TH'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    function getThisWeekRange() {
+        const d = new Date(); const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        const start = new Date(d.setDate(diff)); const end = new Date(start); end.setDate(start.getDate() + 6);
+        return { start: toYYYYMMDD(start), end: toYYYYMMDD(end) };
+    }
+    function getISOWeek(date) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+    }
+    function getDateOfISOWeek(w, y) {
+        let simple = new Date(y, 0, 1 + (w - 1) * 7); let dow = simple.getDay();
+        let ISOweekStart = simple;
+        if (dow <= 4) ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
+        else ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
+        return ISOweekStart;
+    }
+    function toYYYYMMDD(date) {
+        const d = new Date(date);
+        return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+    }
+
+    // ================= หน้าแรก (สแกน) =================
+    function selectStore(name, btnElement) {
+      selectedStore = name;
+      document.querySelectorAll('.store-btn').forEach(b => b.classList.remove('active'));
+      btnElement.classList.add('active');
+      document.getElementById('actionSection').classList.add('active');
+    }
+
+    async function startNFCScan() {
+      if ('NDEFReader' in window) {
+        try {
+          nfcAbortController = new AbortController();
+          const ndef = new NDEFReader();
+          await ndef.scan({ signal: nfcAbortController.signal });
+          
+          Swal.fire({
+            icon: 'info', title: 'พร้อมสแกนบัตร', html: '<b>กรุณานำบัตรมาแตะที่ด้านหลังมือถือ</b><br><br><span style="color:#FF6B35; font-size:0.9rem;">(กรุณากดปุ่มนี้ก่อนแตะบัตรทุกครั้ง)</span>',
+            showConfirmButton: false, showCancelButton: true, cancelButtonText: 'ยกเลิก', allowOutsideClick: false
+          }).then((result) => { if (result.isDismissed && nfcAbortController) nfcAbortController.abort(); });
+
+          ndef.onreading = (event) => {
+            if (nfcAbortController) nfcAbortController.abort(); 
+            let nfcId = event.serialNumber.replace(/:/g, ''); Swal.close();
+            let fId = nfcId.replace(/\D/g, ''); 
+            if (fId.length > 5) fId = fId.substring(0, 5) + '-' + fId.substring(5, 6); else fId = nfcId; 
+            document.getElementById('demoNfcInput').value = fId;
+            demoProcess();
+          };
+          ndef.onreadingerror = () => { Swal.fire('Error', 'อ่านบัตรไม่สำเร็จ ลองใหม่อีกครั้ง', 'error'); };
+        } catch (err) { 
+          if (err.name === 'NotAllowedError') Swal.fire('สิทธิ์ถูกปฏิเสธ', 'เบราว์เซอร์ไม่อนุญาต\n\n📌 โปรดเลือก "เพิ่มลงในหน้าจอหลัก" แล้วใช้งานผ่านหน้าจอหลัก', 'error');
+          else Swal.fire('ไม่รองรับ NFC', `สาเหตุ: ${err.message}`, 'error'); 
+        }
+      } else Swal.fire('Warning', 'อุปกรณ์ไม่รองรับระบบ NFC', 'warning');
+    }
+
+    function startBarcodeScan() {
+      document.getElementById('barcodeModal').classList.add('active');
+      setTimeout(() => {
+        if (!html5QrcodeScanner) html5QrcodeScanner = new Html5Qrcode("reader");
+        Html5Qrcode.getCameras().then(devices => {
+          if (devices && devices.length) {
+            let cameraId = devices[0].id;
+            for (let i = 0; i < devices.length; i++) {
+               if (devices[i].label.toLowerCase().includes('back') || devices[i].label.toLowerCase().includes('environment')) {
+                  cameraId = devices[i].id; break;
+               }
+            }
+            html5QrcodeScanner.start(
+              cameraId, { fps: 10, qrbox: { width: 250, height: 250 } },
+              (decodedText) => {
+                if (isCameraScanning) {
+                  isCameraScanning = false; closeBarcodeModal();
+                  let val = decodedText.replace(/\D/g, '');
+                  if (val.length > 5) val = val.substring(0, 5) + '-' + val.substring(5, 6);
+                  document.getElementById('demoNfcInput').value = val;
+                  demoProcess();
+                }
+              },
+              (err) => {}
+            ).then(() => { isCameraScanning = true; }).catch(err => {
+               closeBarcodeModal(); Swal.fire('Error', `ไม่สามารถเปิดกล้องได้: ${err}`, 'error');
+            });
+          } else { closeBarcodeModal(); Swal.fire('Error', 'ไม่พบกล้อง', 'error'); }
+        }).catch(err => { closeBarcodeModal(); Swal.fire('สิทธิ์ถูกปฏิเสธ', 'โปรดอนุญาตให้เข้าถึงกล้องบนเบราว์เซอร์', 'error'); });
+      }, 300);
+    }
+
+    function closeBarcodeModal() {
+      if (html5QrcodeScanner && isCameraScanning) { 
+        html5QrcodeScanner.stop().then(() => { html5QrcodeScanner.clear(); isCameraScanning = false; }).catch(e => console.log(e)); 
+      }
+      closeModal('barcodeModal');
+    }
+
+    function demoProcess() {
+      const nfcId = document.getElementById('demoNfcInput').value.trim();
+      if (!nfcId) { Swal.fire('Warning', 'กรุณากรอกเลขทะเบียน', 'warning'); return; }
+      showLoading();
+      
+      callAPI('processNFC', { nfcId: nfcId, storeName: selectedStore })
+        .then(res => {
+          hideLoading();
+          if (res.success) { 
+            document.getElementById('modalNfcId').innerText = res.data.nfcId;
+            document.getElementById('modalName').innerText = res.data.name;
+            document.getElementById('modalFactory').innerText = res.data.factory + " (" + res.data.cost + ")";
+            document.getElementById('modalDateTime').innerText = res.data.time;
+            document.getElementById('modalValue').innerText = res.data.value + " บ.";
+            document.getElementById('successModal').classList.add('active');
+            document.getElementById('demoNfcInput').value = ''; 
+          } else { Swal.fire({ icon: res.isDuplicate ? 'warning' : 'error', title: res.isDuplicate ? 'ใช้สิทธิ์แล้ว' : 'ผิดพลาด', text: res.message }); }
+        }).catch(err => { hideLoading(); Swal.fire('Error', err.message, 'error'); });
+    }
+
+    // ================= หน้ารายงาน =================
+    function loadReportData() {
+      const filters = { startDate: document.getElementById('filterStartDate').value, endDate: document.getElementById('filterEndDate').value, factory: document.getElementById('filterFactory').value };
+      showLoading();
+      callAPI('getReportData', { filters: filters })
+        .then(res => {
+          hideLoading();
+          if (res.success) {
+            const facKeys = Object.keys(res.summary.byFactory);
+            if(facKeys.length > 0) factoryList = facKeys;
+            
+            let sel = document.getElementById('filterFactory');
+            let currentSel = sel.value;
+            sel.innerHTML = '<option value="all">ทั้งหมด</option>';
+            factoryList.forEach(f => { sel.innerHTML += `<option value="${f}">${f}</option>`; });
+            sel.value = currentSel;
+
+            let cardsHtml = `<div class="summary-card total"><div class="summary-card-title">รวมทั้งหมด</div><div class="summary-card-value">${formatNumber(res.summary.total)}</div></div>`;
+            factoryList.forEach(f => {
+              let c = res.summary.byFactory[f] ? res.summary.byFactory[f].count : 0;
+              cardsHtml += `<div class="summary-card"><div class="summary-card-title">${f}</div><div class="summary-card-value" style="color:#2196F3;">${formatNumber(c)}</div></div>`;
+            });
+            document.getElementById('reportSummaryCards').innerHTML = cardsHtml;
+
+            const tbody = document.getElementById('dataTableBody');
+            if (res.data.length === 0) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">ไม่พบข้อมูล</td></tr>`; return; }
+            let html = '';
+            res.data.forEach((row, idx) => {
+              html += `<tr><td>${idx+1}</td><td>${row.nfcId}</td><td>${row.name}</td><td>${row.cost}</td><td>${row.factory}</td><td>${row.store}</td><td>${row.date} ${row.time.substring(0,5)}</td></tr>`;
+            });
+            tbody.innerHTML = html;
+          }
+        }).catch(err => { hideLoading(); Swal.fire('Error', err.message, 'error'); });
+    }
+    function applyFilter() { loadReportData(); }
+    function resetFilter() { 
+      const tw = getThisWeekRange(); document.getElementById('filterStartDate').value = tw.start; document.getElementById('filterEndDate').value = tw.end; document.getElementById('filterFactory').value = 'all'; loadReportData(); 
+    }
+
+    // ================= หน้าผู้ดูแล =================
+    function adminLogin() {
+      const pwd = document.getElementById('adminPassword').value.trim();
+      if (!pwd) return; currentAdminAuth = pwd; reloadAdminSummary();
+    }
+    
+    function switchAdminTab(tabId, el) {
+      document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active')); el.classList.add('active');
+      document.querySelectorAll('.admin-tab-content').forEach(c => c.style.display = 'none'); document.getElementById(tabId).style.display = 'block';
+    }
+
+    function updateAdminWeekDropdown() {
+      const year = parseInt(document.getElementById('adminFilterYear').value);
+      const weekSelect = document.getElementById('adminFilterWeek');
+      const selectedWeek = weekSelect.value;
+      weekSelect.innerHTML = '<option value="all">ทุกสัปดาห์</option>';
+      let d = new Date(year, 11, 31); let weeksInYear = getISOWeek(d) === 1 ? getISOWeek(new Date(year, 11, 24)) : getISOWeek(d);
+      for(let w = 1; w <= weeksInYear; w++) {
+          let start = getDateOfISOWeek(w, year); let end = new Date(start); end.setDate(end.getDate() + 6);
+          weekSelect.innerHTML += `<option value="${w}">สัปดาห์ ${w} (${start.getDate()}/${start.getMonth()+1}-${end.getDate()}/${end.getMonth()+1})</option>`;
+      }
+      if (window.isFirstLoad && year === new Date().getFullYear()) weekSelect.value = getISOWeek(new Date());
+      else if (selectedWeek !== 'all' && selectedWeek <= weeksInYear) weekSelect.value = selectedWeek;
+      applyAdminWeekFilter();
+    }
+
+    function applyAdminWeekFilter() {
+        let year = parseInt(document.getElementById('adminFilterYear').value);
+        let week = document.getElementById('adminFilterWeek').value;
+        if (week === 'all') {
+            document.getElementById('adminDateRangeDisplay').textContent = `ข้อมูลตลอดทั้งปี ${year + 543}`;
+            document.getElementById('adminStartDateHidden').value = `${year}-01-01`; document.getElementById('adminEndDateHidden').value = `${year}-12-31`;
+        } else {
+            let start = getDateOfISOWeek(week, year); let end = new Date(start); end.setDate(end.getDate() + 6);
+            document.getElementById('adminDateRangeDisplay').textContent = `${start.toLocaleDateString('th-TH')} - ${end.toLocaleDateString('th-TH')}`;
+            document.getElementById('adminStartDateHidden').value = toYYYYMMDD(start); document.getElementById('adminEndDateHidden').value = toYYYYMMDD(end);
+        }
+        if (currentAdminAuth) reloadAdminSummary();
+    }
+
+    function reloadAdminSummary() {
+      showLoading();
+      const filters = { startDate: document.getElementById('adminStartDateHidden').value, endDate: document.getElementById('adminEndDateHidden').value, factory: 'all' };
+      
+      callAPI('getAdminSummary', { password: currentAdminAuth, filters: filters })
+        .then(res => {
+          hideLoading();
+          if (res.success) {
+            document.getElementById('adminLogin').style.display = 'none'; 
+            document.getElementById('adminWorkspace').style.display = 'block';
+            
+            const nested = res.summary.nested; const stores = res.summary.stores;
+            let theadHtml = `<tr><th>โรงงาน</th><th>Cost</th>`;
+            stores.forEach(s => { theadHtml += `<th>${s}</th>` });
+            theadHtml += `<th>ใช้สิทธิ์ (คน)</th><th>ยอดเงิน (บาท)</th></tr>`;
+            document.getElementById('adminThead').innerHTML = theadHtml;
+
+            let tbodyHtml = ''; const facs = Object.keys(nested).sort();
+            if(facs.length === 0) {
+              tbodyHtml = `<tr><td colspan="${4 + stores.length}">ไม่พบข้อมูลในช่วงเวลานี้</td></tr>`;
+            } else {
+               facs.forEach(fac => {
+                 const costs = Object.keys(nested[fac]).sort(); const rowspan = costs.length;
+                 costs.forEach((cost, idx) => {
+                   tbodyHtml += `<tr>`;
+                   if (idx === 0) tbodyHtml += `<td rowspan="${rowspan}" style="vertical-align:top; font-weight:bold; color:#FF6B35;">${fac}</td>`;
+                   tbodyHtml += `<td>${cost}</td>`;
+                   let rowData = nested[fac][cost];
+                   stores.forEach(s => { let count = rowData.stores[s] || 0; tbodyHtml += `<td>${count > 0 ? formatNumber(count) : '-'}</td>`; });
+                   tbodyHtml += `<td><strong>${formatNumber(rowData.totalCount)}</strong></td>`;
+                   tbodyHtml += `<td style="color:#2E7D32;"><strong>${formatNumber(rowData.totalValue)}</strong></td></tr>`;
+                 });
+               });
+            }
+            document.getElementById('tbodyAdminCombined').innerHTML = tbodyHtml;
+
+            let tfootHtml = `<tr><td colspan="${2 + stores.length}" style="text-align: right; background:#f0f0f0;"><strong>ยอดรวมทั้งหมด</strong></td>`;
+            tfootHtml += `<td style="background:#f0f0f0; color:#333;"><strong>${formatNumber(res.summary.totalCount)}</strong></td>`;
+            tfootHtml += `<td style="background:#f0f0f0; color:#2E7D32; font-size:1.1rem;"><strong>${formatNumber(res.summary.totalValue)}</strong></td></tr>`;
+            document.getElementById('adminTfoot').innerHTML = tfootHtml;
+
+            document.getElementById('telegramToggle').checked = res.telegramEnabled;
+          } else { Swal.fire('Error', res.message, 'error'); currentAdminAuth = ''; }
+        }).catch(err => { hideLoading(); Swal.fire('Error', err.message, 'error'); });
+    }
+    
+    function toggleTelegram(s) { callAPI('setTelegramStatus', { status: s }).catch(err => { document.getElementById('telegramToggle').checked = !s; Swal.fire('Error','เปลี่ยนสถานะไม่สำเร็จ','error'); }); }
+    
+    function exportToExcel() {
+      let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.table_to_sheet(document.getElementById("exportTable")), "Summary");
+      let d = document.getElementById("adminDateRangeDisplay").innerText.replace(/ /g, "_").replace(/\//g, "-");
+      XLSX.writeFile(wb, `สรุปคูปองอาหาร_${d}.xlsx`);
+    }
+
+    // ================= Admin: CRUD พนักงาน =================
+    function loadEmpData() {
+      showLoading();
+      callAPI('getEmployees', { password: currentAdminAuth })
+        .then(res => {
+          hideLoading(); let html = '';
+          res.data.forEach(r => { html += `<tr><td>${r.nfcId}</td><td>${r.name}</td><td>${r.cost}</td><td>${r.factory}</td><td><button class="btn-sm btn-edit" onclick='editEmp(${JSON.stringify(r)})'>แก้</button> <button class="btn-sm btn-delete" onclick="delEmp(${r.row})">ลบ</button></td></tr>`; });
+          document.getElementById('tbodyEmp').innerHTML = html;
+        }).catch(err => { hideLoading(); Swal.fire('Error', err.message, 'error'); });
+    }
+    function openEmpModal() { document.getElementById('empRow').value=''; document.getElementById('empId').value=''; document.getElementById('empName').value=''; document.getElementById('empCost').value=''; document.getElementById('empFactory').value=''; document.getElementById('empModalTitle').innerText='เพิ่มพนักงาน'; document.getElementById('empModal').classList.add('active'); }
+    function editEmp(r) { document.getElementById('empRow').value=r.row; document.getElementById('empId').value=r.nfcId; document.getElementById('empName').value=r.name; document.getElementById('empCost').value=r.cost; document.getElementById('empFactory').value=r.factory; document.getElementById('empModalTitle').innerText='แก้ไขพนักงาน'; document.getElementById('empModal').classList.add('active'); }
+    function saveEmpData() {
+      const data = { row: document.getElementById('empRow').value, nfcId: document.getElementById('empId').value, name: document.getElementById('empName').value, cost: document.getElementById('empCost').value, factory: document.getElementById('empFactory').value };
+      if(!data.nfcId || !data.name) return; showLoading(); closeModal('empModal');
+      callAPI('saveEmployee', { password: currentAdminAuth, data: data }).then(() => loadEmpData()).catch(e => { hideLoading(); Swal.fire('Error', e.message, 'error'); });
+    }
+    function delEmp(row) {
+      if(confirm('ยืนยันการลบ?')){ showLoading(); callAPI('deleteEmployee', { password: currentAdminAuth, row: row }).then(() => loadEmpData()).catch(e => { hideLoading(); Swal.fire('Error', e.message, 'error'); }); }
+    }
+
+    // ================= Admin: CRUD ร้านค้า =================
+    function loadStoreData() {
+      showLoading();
+      callAPI('getStoresAdmin', { password: currentAdminAuth })
+        .then(res => {
+          hideLoading(); let html = '';
+          res.data.forEach(r => { html += `<tr><td>${r.id}</td><td>${r.name}</td><td><button class="btn-sm btn-edit" onclick='editStore(${JSON.stringify(r)})'>แก้</button> <button class="btn-sm btn-delete" onclick="delStore(${r.row})">ลบ</button></td></tr>`; });
+          document.getElementById('tbodyStore').innerHTML = html;
+        }).catch(err => { hideLoading(); Swal.fire('Error', err.message, 'error'); });
+    }
+    function openStoreModal() { document.getElementById('storeRow').value=''; document.getElementById('storeId').value=''; document.getElementById('storeName').value=''; document.getElementById('storeModalTitle').innerText='เพิ่มร้านค้า'; document.getElementById('storeModal').classList.add('active'); }
+    function editStore(r) { document.getElementById('storeRow').value=r.row; document.getElementById('storeId').value=r.id; document.getElementById('storeName').value=r.name; document.getElementById('storeModalTitle').innerText='แก้ไขร้านค้า'; document.getElementById('storeModal').classList.add('active'); }
+    function saveStoreData() {
+      const data = { row: document.getElementById('storeRow').value, id: document.getElementById('storeId').value, name: document.getElementById('storeName').value };
+      if(!data.name) return; showLoading(); closeModal('storeModal');
+      callAPI('saveStore', { password: currentAdminAuth, data: data }).then(() => loadStoreData()).catch(e => { hideLoading(); Swal.fire('Error', e.message, 'error'); });
+    }
+    function delStore(row) {
+      if(confirm('ยืนยันการลบ?')){ showLoading(); callAPI('deleteStore', { password: currentAdminAuth, row: row }).then(() => loadStoreData()).catch(e => { hideLoading(); Swal.fire('Error', e.message, 'error'); }); }
+    }
+
+    function adminLogout() { currentAdminAuth = ''; document.getElementById('adminLogin').style.display = 'block'; document.getElementById('adminWorkspace').style.display = 'none'; document.getElementById('adminPassword').value = ''; }
+  </script>
+ </body>
 </html>
