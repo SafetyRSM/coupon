@@ -315,6 +315,7 @@
 
   <script>
     // ================= กำหนดตัวแปรสำหรับ API =================
+    // ⚠️ นำ URL ของ Web App จาก Google Apps Script (ที่ลงท้ายด้วย /exec) มาวางที่นี่
     const API_URL = 'https://script.google.com/macros/s/AKfycbwirJB9ehY_U7XJMPhkFq5jzTRVBsJP9cyG0gY53BMNH3Ds4pgQp_4YJj7HQ8K_8tSpHQ/exec'; 
 
     let currentPage = 'home';
@@ -323,8 +324,9 @@
     let html5QrcodeScanner = null;
     let isCameraScanning = false;
     
-    // เอา AbortController ออก และใช้ Boolean Flag ดักแทนเพื่อไม่ให้ Crash บนมือถือบางรุ่น
+    // เอาตัวแปร AbortController ไว้ดักสถานะการอ่าน
     let isNfcScanning = false; 
+    let nfcAbortController = null;
 
     let factoryList = ['RMK', 'CGL#3', 'AWP', 'CENTER']; 
 
@@ -433,56 +435,86 @@
       document.getElementById('actionSection').classList.add('active');
     }
 
-    // ================= แก้ไขโค้ด NFC ใช้งานได้ทุกเบราว์เซอร์ =================
+    // ================= โค้ด NFC อ่านค่า Record จากบัตร (ไม่ใช่ UID) =================
     async function startNFCScan() {
       if (!('NDEFReader' in window)) {
-        Swal.fire('คำเตือน', 'เบราว์เซอร์ที่ท่านใช้อยู่ ไม่รองรับระบบ NFC\n\n📌 แนะนำ: กรุณาเปิดเว็บผ่าน Google Chrome สำหรับ Android', 'warning');
+        Swal.fire('คำเตือน', 'เบราว์เซอร์นี้ไม่รองรับระบบ NFC\n\n📌 แนะนำ: กรุณาเปิดเว็บผ่าน Google Chrome สำหรับ Android', 'warning');
         return;
       }
       
       try {
         const ndef = new NDEFReader();
+        nfcAbortController = new AbortController();
 
-        // ดัก Event รอไว้ก่อนเริ่มคำสั่งสแกน
         ndef.onreading = (event) => {
           if (!isNfcScanning) return; 
-          isNfcScanning = false; // ปิดการรับค่าซ้ำซ้อนทันที
+          isNfcScanning = false;
+          if (nfcAbortController) nfcAbortController.abort(); // ตัดการเชื่อมต่อทันทีเมื่ออ่านเจอ
+
+          Swal.close(); // ปิดกล่องรอสแกน
           
-          let nfcId = event.serialNumber.replace(/:/g, '');
-          Swal.close();
-          let fId = nfcId.replace(/\D/g, ''); 
-          if (fId.length > 5) fId = fId.substring(0, 5) + '-' + fId.substring(5, 6); else fId = nfcId; 
-          
-          document.getElementById('demoNfcInput').value = fId;
-          demoProcess();
+          try {
+            let recordText = "";
+            // วนหาค่าที่เป็น Text Record จากในบัตร NFC
+            for (const record of event.message.records) {
+              if (record.recordType === "text") {
+                const textDecoder = new TextDecoder(record.encoding || "utf-8");
+                recordText = textDecoder.decode(record.data);
+                break;
+              }
+            }
+
+            if (!recordText) {
+              Swal.fire('แจ้งเตือน', 'บัตรนี้ไม่มีข้อมูล Text Record ที่เขียนไว้ (หรือเป็นบัตรเปล่า)', 'warning');
+              return;
+            }
+
+            // จัดรูปแบบข้อความที่อ่านได้ให้เป็น รหัสพนักงาน
+            let fId = recordText.replace(/\D/g, ''); 
+            if (fId.length > 5) fId = fId.substring(0, 5) + '-' + fId.substring(5, 6); 
+            else fId = recordText; 
+            
+            document.getElementById('demoNfcInput').value = fId;
+            demoProcess();
+
+          } catch(e) {
+            Swal.fire('ข้อผิดพลาด', 'ถอดรหัสข้อมูลบัตรล้มเหลว: ' + e.message, 'error');
+          }
         };
 
         ndef.onreadingerror = () => {
-          if (isNfcScanning) Swal.fire('เกิดข้อผิดพลาด', 'อ่านข้อมูลบัตรไม่สำเร็จ กรุณาลองนำบัตรมาแตะใหม่อีกครั้ง', 'error');
+          if (isNfcScanning) Swal.fire('ข้อผิดพลาด', 'อ่านข้อมูลบัตรไม่สำเร็จ กรุณาลองนำบัตรมาแตะใหม่อีกครั้ง', 'error');
         };
 
-        await ndef.scan();
-        isNfcScanning = true; // เปิดสวิตช์อนุญาตให้เริ่มรับค่าได้
+        // สั่งเริ่มสแกน
+        await ndef.scan({ signal: nfcAbortController.signal });
+        isNfcScanning = true; 
 
         Swal.fire({
           icon: 'info',
           title: 'พร้อมสแกนบัตร',
-          html: '<div style="font-size:1.1rem; color:#2E7D32;">นำบัตรมาแตะที่ด้านหลังมือถือได้เลยครับ</div>',
+          html: '<div style="font-size:1.1rem; color:#2E7D32;">นำบัตรพนักงานมาแตะที่ด้านหลังมือถือได้เลยครับ</div>',
           showConfirmButton: false,
           showCancelButton: true,
           cancelButtonText: 'ยกเลิก',
           allowOutsideClick: false
         }).then((result) => {
           if (result.isDismissed) {
-             isNfcScanning = false; // หากกดยกเลิก ให้ปิดสวิตช์รับค่า (จะไม่ทำงานเมื่อเอาบัตรมาแตะทีหลัง)
+             isNfcScanning = false;
+             if (nfcAbortController) nfcAbortController.abort();
           }
         });
 
       } catch (error) {
-        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเปิดใช้ระบบ NFC ได้ โปรดตรวจสอบว่าท่านเปิดใช้งาน NFC ในตั้งค่ามือถือแล้ว\n(' + error.message + ')', 'error');
+        if (error.name === 'NotAllowedError') {
+          Swal.fire('สิทธิ์ถูกปฏิเสธ', 'เบราว์เซอร์ไม่อนุญาตให้ใช้ NFC\n\n📌 แนะนำ: ลองกดจุด 3 จุดมุมขวาบนของเบราว์เซอร์ แล้วเลือก "เพิ่มลงในหน้าจอหลัก" แล้วเข้าจากไอคอนบนหน้าจอครับ', 'error');
+        } else {
+          Swal.fire('ไม่สามารถใช้ NFC ได้', 'โปรดตรวจสอบว่าเปิดใช้งานระบบ NFC ในตั้งค่ามือถือแล้ว\n\nError: ' + error.message, 'error');
+        }
       }
     }
 
+    // ================= กล้องสแกนบาร์โค้ด =================
     function startBarcodeScan() {
       document.getElementById('barcodeModal').classList.add('active');
       setTimeout(() => {
