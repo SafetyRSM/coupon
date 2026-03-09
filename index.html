@@ -3,7 +3,9 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ระบบคูปองอาหาร</title>
+  <title>คูปองอาหาร</title>
+  
+  <link rel="shortcut icon" href="https://lh5.googleusercontent.com/d/1i6kR2cG42pzNT-m7dSGFeksarCuoEJSo">
   
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -313,7 +315,6 @@
 
   <script>
     // ================= กำหนดตัวแปรสำหรับ API =================
-    // ⚠️ นำ URL ของ Web App จาก Google Apps Script (ที่ลงท้ายด้วย /exec) มาวางที่นี่
     const API_URL = 'https://script.google.com/macros/s/AKfycbwirJB9ehY_U7XJMPhkFq5jzTRVBsJP9cyG0gY53BMNH3Ds4pgQp_4YJj7HQ8K_8tSpHQ/exec'; 
 
     let currentPage = 'home';
@@ -321,10 +322,12 @@
     let selectedStore = '';
     let html5QrcodeScanner = null;
     let isCameraScanning = false;
-    let nfcAbortController = null;
+    
+    // เอา AbortController ออก และใช้ Boolean Flag ดักแทนเพื่อไม่ให้ Crash บนมือถือบางรุ่น
+    let isNfcScanning = false; 
+
     let factoryList = ['RMK', 'CGL#3', 'AWP', 'CENTER']; 
 
-    // ================= ฟังก์ชันเชื่อมต่อกับ Google Apps Script API =================
     async function callAPI(action, params = {}) {
       const payload = { action: action, ...params };
       try {
@@ -341,7 +344,6 @@
       }
     }
     
-    // ================= เริ่มต้นระบบ =================
     document.addEventListener("DOMContentLoaded", () => {
       showLoading();
       callAPI('getInitialData').then(res => {
@@ -374,7 +376,6 @@
       window.isFirstLoad = true; updateAdminWeekDropdown(); window.isFirstLoad = false;
     });
 
-    // ================= ฟังก์ชันทั่วไป =================
     function showLoading() { document.getElementById('loadingOverlay').classList.add('active'); }
     function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
     
@@ -425,7 +426,6 @@
         return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
     }
 
-    // ================= หน้าแรก (สแกน) =================
     function selectStore(name, btnElement) {
       selectedStore = name;
       document.querySelectorAll('.store-btn').forEach(b => b.classList.remove('active'));
@@ -433,32 +433,54 @@
       document.getElementById('actionSection').classList.add('active');
     }
 
+    // ================= แก้ไขโค้ด NFC ใช้งานได้ทุกเบราว์เซอร์ =================
     async function startNFCScan() {
-      if ('NDEFReader' in window) {
-        try {
-          nfcAbortController = new AbortController();
-          const ndef = new NDEFReader();
-          await ndef.scan({ signal: nfcAbortController.signal });
-          
-          Swal.fire({
-            icon: 'info', title: 'พร้อมสแกนบัตร', html: '<b>กรุณานำบัตรมาแตะที่ด้านหลังมือถือ</b><br><br><span style="color:#FF6B35; font-size:0.9rem;">(กรุณากดปุ่มนี้ก่อนแตะบัตรทุกครั้ง)</span>',
-            showConfirmButton: false, showCancelButton: true, cancelButtonText: 'ยกเลิก', allowOutsideClick: false
-          }).then((result) => { if (result.isDismissed && nfcAbortController) nfcAbortController.abort(); });
+      if (!('NDEFReader' in window)) {
+        Swal.fire('คำเตือน', 'เบราว์เซอร์ที่ท่านใช้อยู่ ไม่รองรับระบบ NFC\n\n📌 แนะนำ: กรุณาเปิดเว็บผ่าน Google Chrome สำหรับ Android', 'warning');
+        return;
+      }
+      
+      try {
+        const ndef = new NDEFReader();
 
-          ndef.onreading = (event) => {
-            if (nfcAbortController) nfcAbortController.abort(); 
-            let nfcId = event.serialNumber.replace(/:/g, ''); Swal.close();
-            let fId = nfcId.replace(/\D/g, ''); 
-            if (fId.length > 5) fId = fId.substring(0, 5) + '-' + fId.substring(5, 6); else fId = nfcId; 
-            document.getElementById('demoNfcInput').value = fId;
-            demoProcess();
-          };
-          ndef.onreadingerror = () => { Swal.fire('Error', 'อ่านบัตรไม่สำเร็จ ลองใหม่อีกครั้ง', 'error'); };
-        } catch (err) { 
-          if (err.name === 'NotAllowedError') Swal.fire('สิทธิ์ถูกปฏิเสธ', 'เบราว์เซอร์ไม่อนุญาต\n\n📌 โปรดเลือก "เพิ่มลงในหน้าจอหลัก" แล้วใช้งานผ่านหน้าจอหลัก', 'error');
-          else Swal.fire('ไม่รองรับ NFC', `สาเหตุ: ${err.message}`, 'error'); 
-        }
-      } else Swal.fire('Warning', 'อุปกรณ์ไม่รองรับระบบ NFC', 'warning');
+        // ดัก Event รอไว้ก่อนเริ่มคำสั่งสแกน
+        ndef.onreading = (event) => {
+          if (!isNfcScanning) return; 
+          isNfcScanning = false; // ปิดการรับค่าซ้ำซ้อนทันที
+          
+          let nfcId = event.serialNumber.replace(/:/g, '');
+          Swal.close();
+          let fId = nfcId.replace(/\D/g, ''); 
+          if (fId.length > 5) fId = fId.substring(0, 5) + '-' + fId.substring(5, 6); else fId = nfcId; 
+          
+          document.getElementById('demoNfcInput').value = fId;
+          demoProcess();
+        };
+
+        ndef.onreadingerror = () => {
+          if (isNfcScanning) Swal.fire('เกิดข้อผิดพลาด', 'อ่านข้อมูลบัตรไม่สำเร็จ กรุณาลองนำบัตรมาแตะใหม่อีกครั้ง', 'error');
+        };
+
+        await ndef.scan();
+        isNfcScanning = true; // เปิดสวิตช์อนุญาตให้เริ่มรับค่าได้
+
+        Swal.fire({
+          icon: 'info',
+          title: 'พร้อมสแกนบัตร',
+          html: '<div style="font-size:1.1rem; color:#2E7D32;">นำบัตรมาแตะที่ด้านหลังมือถือได้เลยครับ</div>',
+          showConfirmButton: false,
+          showCancelButton: true,
+          cancelButtonText: 'ยกเลิก',
+          allowOutsideClick: false
+        }).then((result) => {
+          if (result.isDismissed) {
+             isNfcScanning = false; // หากกดยกเลิก ให้ปิดสวิตช์รับค่า (จะไม่ทำงานเมื่อเอาบัตรมาแตะทีหลัง)
+          }
+        });
+
+      } catch (error) {
+        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเปิดใช้ระบบ NFC ได้ โปรดตรวจสอบว่าท่านเปิดใช้งาน NFC ในตั้งค่ามือถือแล้ว\n(' + error.message + ')', 'error');
+      }
     }
 
     function startBarcodeScan() {
