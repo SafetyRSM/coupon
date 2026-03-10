@@ -49,25 +49,25 @@
     .demo-input { flex: 1; min-width: 0; padding: 0.8rem; border: 2px solid #e0e0e0; border-radius: 12px; font-family: 'Kanit'; font-size: 1.1rem; text-align: center; }
     .demo-btn { background: #FF6B35; color: white; border: none; padding: 0.8rem 1.2rem; border-radius: 12px; font-family: 'Kanit'; font-size: 1rem; cursor: pointer; white-space: nowrap; }
     
-    /* ปรับแต่ง Summary Cards (ลดความสูง, เอาเส้นขอบบนออก) */
-    .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-    .summary-card { border-radius: 12px; padding: 0.8rem; display:flex; flex-direction:column; align-items:center; text-align:center; transition: transform 0.2s;}
-    .summary-card:hover { transform: translateY(-2px); }
+    /* --- ปรับแต่งการ์ดสรุปหน้ารายงาน --- */
+    .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.8rem; margin-bottom: 1.5rem; }
+    .summary-card { border-radius: 12px; padding: 0.6rem; display:flex; flex-direction:column; align-items:center; text-align:center; transition: transform 0.2s; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 8px rgba(0,0,0,0.03);}
+    .summary-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.08); }
     .summary-card-value { font-size: 1.3rem; font-weight: 700; margin-top: 0.2rem;}
-    .summary-card-title { font-size: 0.8rem; }
+    .summary-card-title { font-size: 0.85rem; font-weight: 600; }
     
-    .filter-section { background: white; border-radius: 15px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; align-items: end; }
+    .filter-section { background: white; border-radius: 15px; padding: 1.2rem; margin-bottom: 1.5rem; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; align-items: end; }
     .filter-group { display: flex; flex-direction: column; gap: 0.3rem; }
-    .filter-input, .filter-select { padding: 0.6rem; border: 1px solid #ddd; border-radius: 8px; font-family: 'Kanit'; width: 100%; }
+    .filter-input, .filter-select { padding: 0.6rem; border: 1px solid #ddd; border-radius: 8px; font-family: 'Kanit'; width: 100%; font-size:0.9rem;}
     
-    /* ปรับแต่งปุ่มค้นหา/รีเซ็ต ให้สวยงาม */
-    .filter-buttons { display: flex; gap: 0.5rem; flex-direction: row; align-items: flex-end; }
+    /* --- ปรับแต่งปุ่มค้นหา/รีเซ็ต ให้สวยงาม --- */
+    .filter-buttons { display: flex; gap: 0.5rem; flex-direction: row; align-items: flex-end; height: 100%; }
     .filter-btn { padding: 0.6rem 1rem; border-radius: 8px; font-family: 'Kanit', sans-serif; font-size: 0.95rem; cursor: pointer; border: none; flex: 1; display:flex; align-items:center; justify-content:center; gap:0.5rem; transition:0.3s; font-weight:500;}
-    .filter-btn.primary { background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); color: white; box-shadow: 0 4px 10px rgba(33,150,243,0.2); }
-    .filter-btn.primary:hover { box-shadow: 0 6px 15px rgba(33,150,243,0.4); }
-    .filter-btn.secondary { background: #f5f7fa; color: #555; border: 1px solid #ddd; }
-    .filter-btn.secondary:hover { background: #e4e8ec; }
+    .filter-btn.primary { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); color: white; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.2); }
+    .filter-btn.primary:hover { box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4); transform: translateY(-2px); }
+    .filter-btn.secondary { background: #f5f7fa; color: #555; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
+    .filter-btn.secondary:hover { background: #e4e8ec; transform: translateY(-2px);}
 
     .table-section { background: white; border-radius: 15px; padding: 1rem; box-shadow: 0 5px 15px rgba(0,0,0,0.05); overflow-x: auto; }
     .data-table { width: 100%; border-collapse: collapse; min-width: 800px; font-size: 0.9rem; }
@@ -120,6 +120,7 @@
       .summary-card.total { grid-column: span 2; }
       .action-buttons { flex-direction: column; }
       .action-buttons button { width: 100%; }
+      .filter-buttons { grid-column: span 2; }
     }
   </style>
  </head>
@@ -131,7 +132,7 @@
    <div class="modal">
     <div class="modal-header" style="background:#2E7D32;"><i class="fas fa-camera"></i> สแกนบาร์โค้ดพนักงาน</div>
     <div class="modal-body" style="padding:1rem; text-align:center;">
-       <div id="reader">กำลังเรียกกล้อง...</div>
+       <div id="reader" style="color:#fff; padding: 2rem;">กำลังเตรียมกล้อง...</div>
     </div>
     <div class="modal-footer"><button class="btn-sm" style="background:#666; padding:0.6rem 1.2rem;" onclick="closeBarcodeModal()">ปิดกล้อง</button></div>
    </div>
@@ -225,6 +226,7 @@
     <div class="summary-cards" id="reportSummaryCards"></div>
 
     <div class="filter-section">
+     <h3 class="filter-title"><i class="fas fa-filter"></i> ตัวกรองข้อมูล</h3>
      <div class="filter-grid">
       <div class="filter-group"><label class="filter-label">วันที่เริ่ม</label> <input type="date" class="filter-input" id="filterStartDate"></div>
       <div class="filter-group"><label class="filter-label">วันที่สิ้นสุด</label> <input type="date" class="filter-input" id="filterEndDate"></div>
@@ -331,9 +333,8 @@
     let selectedStore = '';
     
     // สำหรับจัดการกล้อง
-    let html5QrcodeScanner = null;
+    let html5QrCode = null;
     let isCameraScanning = false;
-    let globalCameraId = null; // เก็บค่า ID กล้องเพื่อแก้ปัญหากล้องจอดำรอบสอง
     
     // สำหรับจัดการ NFC
     let isNfcScanning = false; 
@@ -389,6 +390,7 @@
       window.isFirstLoad = true; updateAdminWeekDropdown(); window.isFirstLoad = false;
     });
 
+    // ================= ฟังก์ชันทั่วไป =================
     function showLoading() { document.getElementById('loadingOverlay').classList.add('active'); }
     function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
     
@@ -446,10 +448,10 @@
       document.getElementById('actionSection').classList.add('active');
     }
 
-    // ================= แก้ไข NFC อ่านเฉพาะในแอป ไม่ให้ OS แทรกแซง =================
+    // ================= แก้ไข NFC ล็อคสิทธิ์ไว้ไม่ให้เด้งแอปอื่น =================
     async function startNFCScan() {
       if (!('NDEFReader' in window)) {
-        Swal.fire('คำเตือน', 'เบราว์เซอร์ไม่อนุญาตให้ใช้งาน NFC\n\n📌 โปรดเปิดผ่าน Chrome ในมือถือ Android', 'warning');
+        Swal.fire('คำเตือน', 'เบราว์เซอร์นี้ไม่รองรับระบบ NFC\n\n📌 แนะนำ: กรุณาเปิดเว็บผ่าน Google Chrome สำหรับ Android', 'warning');
         return;
       }
       
@@ -459,7 +461,7 @@
 
         ndef.onreading = (event) => {
           if (!isNfcScanning) return; 
-          isNfcScanning = false; // ปิดรับค่ารอบต่อไปทันที
+          isNfcScanning = false; // ปิดรับข้อมูลทันทีป้องกันการอ่านซ้ำซ้อน
           Swal.close(); 
           
           try {
@@ -473,32 +475,28 @@
             }
 
             if (!recordText) {
-              Swal.fire('แจ้งเตือน', 'ไม่พบข้อมูล Text Record ในบัตร', 'warning');
-              return;
+              Swal.fire('แจ้งเตือน', 'ไม่พบข้อมูลในบัตร', 'warning');
+            } else {
+              let fId = recordText.replace(/\D/g, ''); 
+              if (fId.length > 5) fId = fId.substring(0, 5) + '-' + fId.substring(5, 6); else fId = recordText; 
+              document.getElementById('demoNfcInput').value = fId;
+              demoProcess();
             }
-
-            let fId = recordText.replace(/\D/g, ''); 
-            if (fId.length > 5) fId = fId.substring(0, 5) + '-' + fId.substring(5, 6); 
-            else fId = recordText; 
-            
-            document.getElementById('demoNfcInput').value = fId;
-            demoProcess();
-
           } catch(e) {
             Swal.fire('ข้อผิดพลาด', 'ถอดรหัสข้อมูลล้มเหลว: ' + e.message, 'error');
           }
 
-          // * สำคัญ *: หน่วงเวลาให้ผู้ใช้เอาบัตรออกก่อนปิด NFC API ป้องกันระบบเครื่องเด้งมาอ่านซ้ำ
+          // หน่วงเวลาปิด NDEFReader ไป 6 วินาที เพื่อล็อคฮาร์ดแวร์ไว้ไม่ให้ระบบเครื่องเด้งขึ้นมา
           setTimeout(() => {
              if (nfcAbortController) {
                  nfcAbortController.abort();
                  nfcAbortController = null;
              }
-          }, 2500); 
+          }, 6000); 
         };
 
         ndef.onreadingerror = () => {
-          if (isNfcScanning) Swal.fire('ข้อผิดพลาด', 'อ่านข้อมูลบัตรไม่สำเร็จ', 'error');
+          if (isNfcScanning) Swal.fire('ข้อผิดพลาด', 'อ่านข้อมูลบัตรไม่สำเร็จ กรุณาลองนำบัตรมาแตะใหม่อีกครั้ง', 'error');
         };
 
         await ndef.scan({ signal: nfcAbortController.signal });
@@ -520,71 +518,76 @@
         });
 
       } catch (error) {
-        Swal.fire('ไม่สามารถใช้ NFC ได้', 'โปรดตรวจสอบว่าท่านเปิดสวิตช์ NFC แล้ว\nError: ' + error.message, 'error');
+        if (error.name === 'NotAllowedError') {
+          Swal.fire('สิทธิ์ถูกปฏิเสธ', 'เบราว์เซอร์ไม่อนุญาตให้ใช้ NFC\n\n📌 แนะนำ: ลองกดจุด 3 จุดมุมขวาบนของเบราว์เซอร์ แล้วเลือก "เพิ่มลงในหน้าจอหลัก" แล้วเข้าจากไอคอนบนหน้าจอครับ', 'error');
+        } else {
+          Swal.fire('ไม่สามารถใช้ NFC ได้', 'โปรดตรวจสอบว่าเปิดใช้งานระบบ NFC ในตั้งค่ามือถือแล้ว\n\nError: ' + error.message, 'error');
+        }
       }
     }
 
-    // ================= แก้ไขกล้องสแกนบาร์โค้ด (จอดำในรอบ 2) =================
+    // ================= แก้ไขกล้องสแกน ล้างค่าทุกครั้ง ป้องกันจอดำ =================
     function startBarcodeScan() {
       document.getElementById('barcodeModal').classList.add('active');
-      document.getElementById('reader').innerHTML = "กำลังเตรียมกล้อง...";
+      document.getElementById('reader').innerHTML = '<div style="padding: 2rem; color: #fff;">กำลังเตรียมกล้อง...</div>';
       
       setTimeout(() => {
-        if (!html5QrcodeScanner) html5QrcodeScanner = new Html5Qrcode("reader");
-
-        // ถ้าจำกล้องได้แล้ว ให้ใช้กล้องนั้นเลย ไม่ต้องค้นหาใหม่ (แก้ปัญหา Error รอบสอง)
-        if (globalCameraId) {
-           startCameraWithId(globalCameraId);
-        } else {
-           Html5Qrcode.getCameras().then(devices => {
-             if (devices && devices.length) {
-               globalCameraId = devices[0].id;
-               for (let i = 0; i < devices.length; i++) {
-                  if (devices[i].label.toLowerCase().includes('back') || devices[i].label.toLowerCase().includes('environment')) {
-                     globalCameraId = devices[i].id; break;
-                  }
-               }
-               startCameraWithId(globalCameraId);
-             } else { 
-               closeBarcodeModal(); Swal.fire('Error', 'ไม่พบกล้อง', 'error'); 
-             }
-           }).catch(err => { 
-             closeBarcodeModal(); Swal.fire('สิทธิ์ถูกปฏิเสธ', 'เบราว์เซอร์ไม่อนุญาตให้ใช้กล้อง', 'error'); 
-           });
+        // เคลียร์ instance เก่าทิ้ง 100% ถ้ามีค้างอยู่
+        if (html5QrCode) {
+            try { html5QrCode.clear(); } catch(e){}
+            html5QrCode = null;
         }
-      }, 300);
-    }
 
-    function startCameraWithId(camId) {
-        html5QrcodeScanner.start(
-          camId, 
+        html5QrCode = new Html5Qrcode("reader");
+        
+        // ให้ไลบรารีจัดการหาเลนส์กล้องหลัง (Environment) ให้อัตโนมัติ เพื่อลด Error บนมือถือ Samsung
+        html5QrCode.start(
+          { facingMode: "environment" },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
             if (isCameraScanning) {
               isCameraScanning = false;
-              closeBarcodeModal();
-              let val = decodedText.replace(/\D/g, '');
-              if (val.length > 5) val = val.substring(0, 5) + '-' + val.substring(5, 6);
-              document.getElementById('demoNfcInput').value = val;
-              demoProcess();
+              
+              // ต้องสั่งปิดกล้อง ก่อนที่จะรันระบบประมวลผล เพื่อคืนทรัพยากรให้มือถือ
+              html5QrCode.stop().then(() => {
+                  html5QrCode.clear();
+                  closeModal('barcodeModal');
+                  
+                  let val = decodedText.replace(/\D/g, '');
+                  if (val.length > 5) val = val.substring(0, 5) + '-' + val.substring(5, 6);
+                  document.getElementById('demoNfcInput').value = val;
+                  demoProcess();
+              }).catch(e => {
+                  closeModal('barcodeModal');
+              });
             }
           },
-          (err) => {}
-        ).then(() => { isCameraScanning = true; })
-         .catch(err => {
-            closeBarcodeModal(); 
-            Swal.fire('Error', `เปิดกล้องไม่สำเร็จ: ${err}`, 'error');
-         });
+          (errorMessage) => { /* ไม่ต้องโชว์ Error ระหว่างกล้องกำลังพยายามจับโฟกัส */ }
+        ).then(() => {
+          isCameraScanning = true;
+        }).catch(err => {
+          closeModal('barcodeModal');
+          Swal.fire('ข้อผิดพลาด', `ไม่สามารถเปิดกล้องได้ โปรดอนุญาตสิทธิ์บนเบราว์เซอร์\n(${err})`, 'error');
+        });
+      }, 400); 
     }
 
     function closeBarcodeModal() {
-      if (html5QrcodeScanner && isCameraScanning) { 
+      if (html5QrCode && isCameraScanning) { 
         isCameraScanning = false;
-        html5QrcodeScanner.stop().then(() => { 
-           html5QrcodeScanner.clear(); 
-        }).catch(e => console.log(e)); 
+        html5QrCode.stop().then(() => { 
+           html5QrCode.clear(); 
+           html5QrCode = null;
+           closeModal('barcodeModal');
+        }).catch(e => { 
+           html5QrCode.clear(); 
+           html5QrCode = null;
+           closeModal('barcodeModal');
+        }); 
+      } else {
+        if(html5QrCode) { try { html5QrCode.clear(); }catch(e){} }
+        closeModal('barcodeModal');
       }
-      closeModal('barcodeModal');
     }
 
     function demoProcess() {
@@ -607,8 +610,8 @@
         }).catch(err => { hideLoading(); Swal.fire('Error', err.message, 'error'); });
     }
 
-    // ================= หน้ารายงาน =================
-    const cardColors = ['#E8F5E9', '#E3F2FD', '#F3E5F5', '#FFF8E1', '#E0F7FA', '#FCE4EC'];
+    // ================= หน้ารายงาน (การ์ดสีพาสเทล) =================
+    const cardColors = ['#E3F2FD', '#F3E5F5', '#E8F5E9', '#FFF8E1', '#E0F7FA', '#FCE4EC'];
 
     function loadReportData() {
       const filters = { startDate: document.getElementById('filterStartDate').value, endDate: document.getElementById('filterEndDate').value, factory: document.getElementById('filterFactory').value };
@@ -626,9 +629,8 @@
             factoryList.forEach(f => { sel.innerHTML += `<option value="${f}">${f}</option>`; });
             sel.value = currentSel;
 
-            // ตกแต่งการ์ดสรุปด้วยสีพาสเทล
             let cardsHtml = `
-              <div class="summary-card total" style="background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);">
+              <div class="summary-card total" style="background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%); border-left: 4px solid #FF9800;">
                  <div class="summary-card-title" style="color:#E65100; font-weight:600;"><i class="fas fa-users"></i> รวมทั้งหมด</div>
                  <div class="summary-card-value" style="color:#E65100;">${formatNumber(res.summary.total)}</div>
               </div>`;
@@ -639,7 +641,7 @@
               let bgColor = cardColors[colorIdx % cardColors.length];
               colorIdx++;
               cardsHtml += `
-                <div class="summary-card" style="background: ${bgColor};">
+                <div class="summary-card" style="background: ${bgColor}; border: none;">
                    <div class="summary-card-title" style="font-weight:600; color:#555;">${f}</div>
                    <div class="summary-card-value" style="color:#333;">${formatNumber(c)}</div>
                 </div>`;
